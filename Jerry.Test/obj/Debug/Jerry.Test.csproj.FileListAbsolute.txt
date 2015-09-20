@@ -1,0 +1,10 @@
+C:\AFILES\Csharp\Jerry.Base\Jerry.Test\obj\Debug\Jerry.Test.csprojResolveAssemblyReference.cache
+C:\AFILES\Csharp\Jerry.Base\Jerry.Test\bin\Debug\Jerry.Test.dll
+C:\AFILES\Csharp\Jerry.Base\Jerry.Test\bin\Debug\Jerry.Test.pdb
+C:\AFILES\Csharp\Jerry.Base\Jerry.Test\bin\Debug\Jerry.Base.dll
+C:\AFILES\Csharp\Jerry.Base\Jerry.Test\bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll
+C:\AFILES\Csharp\Jerry.Base\Jerry.Test\bin\Debug\Jerry.Base.pdb
+C:\AFILES\Csharp\Jerry.Base\Jerry.Test\bin\Debug\zh-Hans\Microsoft.VisualStudio.QualityTools.UnitTestFramework.resources.dll
+C:\AFILES\Csharp\Jerry.Base\Jerry.Test\obj\Debug\Jerry.Test.dll
+C:\AFILES\Csharp\Jerry.Base\Jerry.Test\obj\Debug\Jerry.Test.pdb
+C:\AFILES\Csharp\Jerry.Base\Jerry.Test\bin\Debug\Jerry.Test.dll.config

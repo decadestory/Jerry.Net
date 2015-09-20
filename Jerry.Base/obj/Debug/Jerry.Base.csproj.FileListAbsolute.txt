@@ -1,0 +1,5 @@
+C:\AFILES\Csharp\Jerry.Base\Jerry.Base\obj\Debug\Jerry.Base.csprojResolveAssemblyReference.cache
+C:\AFILES\Csharp\Jerry.Base\Jerry.Base\bin\Debug\Jerry.Base.dll
+C:\AFILES\Csharp\Jerry.Base\Jerry.Base\bin\Debug\Jerry.Base.pdb
+C:\AFILES\Csharp\Jerry.Base\Jerry.Base\obj\Debug\Jerry.Base.dll
+C:\AFILES\Csharp\Jerry.Base\Jerry.Base\obj\Debug\Jerry.Base.pdb
