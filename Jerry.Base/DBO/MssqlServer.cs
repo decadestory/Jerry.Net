@@ -6,16 +6,287 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Practices.EnterpriseLibrary.Data;
 
 namespace Jerry.Base.DBO
 {
     public class MssqlServer
     {
+
+        public static readonly Database Db;
+        public static Database Dbr;
+        private static readonly int CmdTimeOut;
+        private static DateTime? CheckIntval;
+
+        static MssqlServer()
+        {
+            CmdTimeOut = 180;
+            Db = new DatabaseProviderFactory().Create("connStr");
+            Dbr = new DatabaseProviderFactory().Create("connStr");
+
+        }
+
+        private static void CheckReadDB()
+        {
+            try
+            {
+                if (CheckIntval.HasValue && (DateTime.Now - CheckIntval.Value).TotalMinutes < 30)
+                    Dbr = new DatabaseProviderFactory().Create("connStr");
+                else
+                {
+                    Dbr = new DatabaseProviderFactory().Create("connStr_R");
+                    Dbr.ExecuteNonQuery(CommandType.Text, "select count(1) from sysobjects");
+                    CheckIntval = null;
+                }
+            }
+            catch (Exception)
+            {
+                CheckIntval = DateTime.Now;
+                Dbr = new DatabaseProviderFactory().Create("connStr");
+            }
+        }
+
+        public static DataTable ExeDt(string sql)
+        {
+            CheckReadDB();
+            var cmd = Dbr.GetSqlStringCommand(sql);
+            cmd.CommandTimeout = CmdTimeOut;
+            var dt = Dbr.ExecuteDataSet(cmd);
+            return dt == null ? null : dt.Tables[0];
+        }
+
+        public static DataTable ExeDt(string sql, params Param[] parms)
+        {
+            CheckReadDB();
+            var cmd = Dbr.GetSqlStringCommand(sql);
+
+            foreach (Param p in parms)
+            {
+                Dbr.AddInParameter(cmd, p.Name, p.DbType, p.Value);
+            }
+
+            cmd.CommandTimeout = CmdTimeOut;
+            var dt = Dbr.ExecuteDataSet(cmd);
+            return dt == null ? null : dt.Tables[0];
+        }
+
+        public static int ExeSql(string sql, params Param[] parms)
+        {
+            var cmd = Db.GetSqlStringCommand(sql);
+
+            foreach (Param p in parms)
+            {
+                Db.AddInParameter(cmd, p.Name, p.DbType, p.Value);
+            }
+
+            cmd.CommandTimeout = CmdTimeOut;
+            return Db.ExecuteNonQuery(cmd);
+        }
+
+        //public static DataTable ExeDt(string sql)
+        //{
+        //    var dt = Db.ExecuteDataSet(CommandType.Text, sql);
+        //    return dt == null ? null : dt.Tables[0];
+        //}
+
+        public static int ExeSql(string sql)
+        {
+            return Db.ExecuteNonQuery(CommandType.Text, sql);
+        }
+
+        public static T ExeFir<T>(string sql)
+        {
+            CheckReadDB();
+            return (T)Dbr.ExecuteScalar(CommandType.Text, sql);
+        }
+
+        public static object ExeFir(string sql)
+        {
+            CheckReadDB();
+            return Dbr.ExecuteScalar(CommandType.Text, sql);
+        }
+
+        public static bool ExeExist(string sql)
+        {
+            CheckReadDB();
+            var result = (int)Dbr.ExecuteScalar(CommandType.Text, sql);
+            return result > 0;
+        }
+
+        public static int ExeCount(string sql)
+        {
+            CheckReadDB();
+            return (int)Dbr.ExecuteScalar(CommandType.Text, sql);
+        }
+        public static int ExeCount(string sql, params Param[] parms)
+        {
+            CheckReadDB();
+            var cmd = Dbr.GetSqlStringCommand(sql);
+
+            foreach (Param p in parms)
+            {
+                Dbr.AddInParameter(cmd, p.Name, p.DbType, p.Value);
+            }
+
+            cmd.CommandTimeout = CmdTimeOut;
+            return (int)Dbr.ExecuteScalar(cmd);
+        }
+
+        //下面执行存储过程
+        public static DataTable ExeDt(string procName, object[] parms)
+        {
+            var dt = Db.ExecuteDataSet(procName, parms);
+            return dt == null ? null : dt.Tables[0];
+        }
+
+        public static DataTable ExeDt(string procName, Param[] parms, string retstr, out int cnt)
+        {
+            var cmd = Db.GetStoredProcCommand(procName);
+            cmd.CommandTimeout = CmdTimeOut;
+            foreach (var p in parms)
+                Db.AddInParameter(cmd, p.Name, p.DbType, p.Value);
+            Db.AddOutParameter(cmd, retstr, DbType.Int32, 0);
+            var dt = Db.ExecuteDataSet(cmd);
+            cnt = (int)Db.GetParameterValue(cmd, retstr);
+            return dt == null ? null : dt.Tables[0];
+        }
+
+        public static int ExeSql(string procName, params string[] parms)
+        {
+            return Db.ExecuteNonQuery(procName, parms);
+        }
+
+        public static bool ExeExist(string procName, object[] parms)
+        {
+            var result = (int)Db.ExecuteScalar(procName, parms);
+            return result != 0;
+        }
+
+
+
+        public static int ExeCount(string procName, object[] parms)
+        {
+            return (int)Db.ExecuteScalar(procName, parms);
+        }
+
+        //下面执行带事务的SQL
+        public static int ExeTran(string[] sqls)
+        {
+            var cnt = 0;
+            using (var conn = Db.CreateConnection())
+            {
+                conn.Open();
+                var tran = conn.BeginTransaction();
+                try
+                {
+                    foreach (var sql in sqls)
+                    {
+                        var dbc = Db.GetSqlStringCommand(sql);
+                        cnt += Db.ExecuteNonQuery(dbc, tran);
+                    }
+                    tran.Commit();
+                    return cnt;
+
+                }
+                catch (Exception)
+                {
+                    tran.Rollback();
+                    return 0;
+                }
+            }
+        }
+
+        public static bool ExeTran(List<SqlItem> lst)
+        {
+            using (var conn = Db.CreateConnection())
+            {
+                conn.Open();
+                var tran = conn.BeginTransaction();
+                try
+                {
+                    foreach (SqlItem item in lst)
+                    {
+                        if (item.cmdType == CommandType.Text)
+                        {
+                            var cmd = Db.GetSqlStringCommand(item.Sql);
+
+                            if (null != item.pArray && item.pArray.Count() > 0)
+                            {
+                                foreach (Param p in item.pArray)
+                                {
+                                    Db.AddInParameter(cmd, p.Name, p.DbType, p.Value);
+                                }
+                            }
+
+                            Db.ExecuteNonQuery(cmd, tran);
+                        }
+                        else if (item.cmdType == CommandType.StoredProcedure)
+                        {
+                            var cmd = Db.GetStoredProcCommand(item.Sql);
+
+                            if (null != item.pArray && item.pArray.Count() > 0)
+                            {
+                                foreach (Param p in item.pArray)
+                                {
+                                    Db.AddInParameter(cmd, p.Name, p.DbType, p.Value);
+                                }
+                            }
+                            //Db.AddOutParameter(cmd, "@ReturnParam", System.Data.DbType.String, 50);    //输出
+
+                            //关键在这里，添加一个参数@RETURN_VALUE 类型为ReturnValue  
+                            Db.AddParameter(cmd, "@RETURN_VALUE", DbType.String, ParameterDirection.ReturnValue, "", DataRowVersion.Current, null);
+
+                            //执行存储过程
+                            Db.ExecuteNonQuery(cmd, tran);
+                            string result = Db.GetParameterValue(cmd, "@RETURN_VALUE").ToString();    //得到输出参数的值
+
+                            //金额操作存储过程 1成功 -1不成功
+                            if (result == "-1")
+                            {
+                                tran.Rollback();
+                                return false;
+                            }
+
+                        }
+                    }
+                    tran.Commit();
+                    return true;
+                }
+                catch (Exception)
+                {
+                    tran.Rollback();
+                    return false;
+                }
+            }
+        }
+
+
+        #region  内部类
+        public class Param
+        {
+            public string Name { get; set; }
+            public DbType DbType { get; set; }
+            public object Value { get; set; }
+
+        }
+
+        public class SqlItem
+        {
+            public string Sql { get; set; }
+            public CommandType cmdType { get; set; }
+            public MssqlServer.Param[] pArray { get; set; }
+        }
+
+        #endregion
+    }
+
+     public class Ms
+    {
         public string ConnStr;
         SqlConnection _conn;
 
         private static MssqlServer _mInstance = null;
-        private MssqlServer()
+        private Ms()
         {
             ConnStr = ConfigurationManager.ConnectionStrings["ConnStr"].ConnectionString.ToString();
         }
@@ -195,5 +466,4 @@ namespace Jerry.Base.DBO
         }
 
     }
-
 }

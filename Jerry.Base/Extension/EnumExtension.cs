@@ -29,11 +29,11 @@ namespace Jerry.Base.Extension
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static List<ComboResult> EnumToList<T>(bool addAll=false)
+        public static List<ComboMsg> EnumToList<T>(bool addAll=false)
         {
             var list = (from Enum type in Enum.GetValues(typeof (T))
-                        select new ComboResult { Id = type.GetHashCode(), Text = type.Description() }).ToList();
-            if (addAll) list.Insert(0, new ComboResult { Id = 0,Text = "所有"});
+                        select new ComboMsg { Id = type.GetHashCode(), Text = type.Description() }).ToList();
+            if (addAll) list.Insert(0, new ComboMsg { Id = 0,Text = "所有"});
             return list;
         }
 

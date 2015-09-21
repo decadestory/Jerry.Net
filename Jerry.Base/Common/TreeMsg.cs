@@ -13,5 +13,6 @@ namespace Jerry.Base.Common
         public IList<TreeMsg> Children { get;set;}
         public int State { get; set; }
         public bool Checked { get; set; }
+        public int ParentId { get; set; }
     }
 }

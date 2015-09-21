@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Jerry.Base.Common
 {
-    public class ComboResult
+    public class ComboMsg
     {
         /// <summary>
         /// 值
